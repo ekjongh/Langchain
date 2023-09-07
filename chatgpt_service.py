@@ -1,8 +1,13 @@
 # ======================================================================================================================
 # 챗봇 서비스 모듈
 # 출처: https://github.com/jaysooo/chatgpt_streamlit_app
+# [ ChatGPT API를 활용한 챗봇 서비스 구축 프레임워크 ]
+# 1) LangChain - 현재소스에서 사용
+# 2) Semantic Kernel
 # ----------------------------------------------------------------------------------------------------------------------
 # 2023.09.07 - 초기모듈 작성
+#            - 인베딩벡터 정보를 파일로 저장하고, 유사도 검색을 FAISS를 사용하여 처리하는 방식 사용
+# 2023.09.08 - Chroma DB 생성 및 로딩 함수로 변경
 # ======================================================================================================================
 from dotenv import load_dotenv
 from chatgpt_logger import logger
@@ -88,13 +93,14 @@ def answer_from_chatgpt(query):
 # ----------------------------------------------------------------------------------------------------------------------
 # 문서들을 인베팅벡터로 변환하고, Chroma DB를 생성한 후 저장한다.
 # - 서비스가 시작될 때마다 문서변환을 하지 않고, 미리 변환된 문서를 로딩하여 사용할 수 있도록 함수를 분리함
+# [ Open Source Vector DB ]
 # 출처: https://blog.futuresmart.ai/using-langchain-and-open-source-vector-db-chroma-for-semantic-search-with-openais-llm
 # > conda install -c conda-forge chromadb
 # ----------------------------------------------------------------------------------------------------------------------
 from langchain.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
-from langchain.embeddings import SentenceTransformerEmbeddings
+# from langchain.embeddings import SentenceTransformerEmbeddings
 from langchain.embeddings import HuggingFaceEmbeddings
 def doc_to_chroma(directory):
     # 해당 디렉토리의 모든 pdf 파일을 읽어서, 문서를 로딩한다.
@@ -110,13 +116,13 @@ def doc_to_chroma(directory):
     docs = text_splitter.split_documents(documents)
     # print(len(docs))
 
-    # # 문서를 벡터로 변환하고, Chroma DB 객체를 생성한다.
-    # # embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-    # embeddings = HuggingFaceEmbeddings()
-    # try:
-    #     db = Chroma.from_documents(docs, embeddings)
-    # except:
-    #     db = Chroma.from_documents(docs, embeddings)
+    # 문서를 벡터로 변환하고, Chroma DB 객체를 생성한다.
+    # embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    embeddings = HuggingFaceEmbeddings()
+    try:
+        db = Chroma.from_documents(docs, embeddings)
+    except:
+        db = Chroma.from_documents(docs, embeddings)
 
     # Chroma DB를 해당 디렉토리에 저장한다.
     persist_directory = "chroma_db"
