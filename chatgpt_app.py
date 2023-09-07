@@ -12,7 +12,6 @@ from streamlit_chat import message
 load_env()
 
 st.header("Chatbot Demo using `Streamlit and GPT-3.5`")
-
 st.sidebar.title('Chat GPT (RAG)')
 
 # Storing GPT-3.5 responses for easy retrieval to show on Chatbot UI in Streamlit session
