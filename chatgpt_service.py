@@ -1,13 +1,33 @@
 # ======================================================================================================================
-# 챗봇 서비스 모듈
+# 챗GPT 연동 서비스 모듈
 # 출처: https://github.com/jaysooo/chatgpt_streamlit_app
 # [ ChatGPT API를 활용한 챗봇 서비스 구축 프레임워크 ]
-# 1) LangChain - 현재소스에서 사용
+# 1) LangChain(*) - 현재소스에서 사용
 # 2) Semantic Kernel
+#
+# [ 성능향상을 위한 방법 ]
+# 1) RAG를 사용하여, 문서를 인베딩벡터로 변환하고, 유사도 검색을 RAG를 사용하여 처리하는 방식(*) <- 현재소스에서 사용
+# ┌-----------------┐   HuggingFaceEmbeddings   ┌-----------------┐         ┌--------------┐
+# | 관련문서(pdf)   ├-------------------------->| 인베딩벡터 변환 ├-------->| Chroma DB    |
+# └-----------------┘                           └-----------------┘         └--------┬-----┘
+# ┌--------------------┐                        ┌------------------┐                 | 질문과 유사한 문서를 검색
+# | 추출된 내용 +      |<-----------------------┤ 연관된 내용 추출 |<----------------┛
+# | 질문 내용          |                        └------------------┘
+# └---------┬----------┘
+#           |
+# ┌---------∨----------┐                        ┌------------------┐
+# | LangChain          ├----------------------->| ChatGPT 3.5      |
+# └--------------------┘                        └------------------┘
+# 2) 웹 서치 연동하기
+#   - Google Custom Search API
+#   - Serper API
+#   - Serp API
+# 3) ???
 # ----------------------------------------------------------------------------------------------------------------------
 # 2023.09.07 - 초기모듈 작성
 #            - 인베딩벡터 정보를 파일로 저장하고, 유사도 검색을 FAISS를 사용하여 처리하는 방식 사용
 # 2023.09.08 - Chroma DB 생성 및 로딩 함수로 변경
+#            - 서비스 흐름도 작성
 # ======================================================================================================================
 from dotenv import load_dotenv
 from chatgpt_logger import logger
@@ -74,11 +94,11 @@ except:
 # 챗봇 서비스 API
 # ----------------------------------------------------------------------------------------------------------------------
 from langchain.chat_models import ChatOpenAI
-from langchain.chains.question_answering import load_qa_chain
+# from langchain.chains.question_answering import load_qa_chain
 from langchain.chains import RetrievalQA
 def answer_from_chatgpt(query):
     model_name = "gpt-3.5-turbo"
-    chat = ChatOpenAI(temperature=0.3)
+    temperature = 0.3
     llm = ChatOpenAI(model_name=model_name)
     # chain = load_qa_chain(llm, chain_type="stuff", verbose=True)
     # matching_docs = db.similarity_search(query)
