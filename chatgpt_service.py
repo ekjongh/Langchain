@@ -70,14 +70,18 @@ except:
 # ----------------------------------------------------------------------------------------------------------------------
 from langchain.chat_models import ChatOpenAI
 from langchain.chains.question_answering import load_qa_chain
+from langchain.chains import RetrievalQA
 def answer_from_chatgpt(query):
     model_name = "gpt-3.5-turbo"
     chat = ChatOpenAI(temperature=0.3)
     llm = ChatOpenAI(model_name=model_name)
-    chain = load_qa_chain(llm, chain_type="stuff", verbose=True)
-    matching_docs = db.similarity_search(query)
+    # chain = load_qa_chain(llm, chain_type="stuff", verbose=True)
+    # matching_docs = db.similarity_search(query)
+    # answer = chain.run(input_documents=matching_docs, question=query)
 
-    answer = chain.run(input_documents=matching_docs, question=query)
+    # RetrieverQA Chain 사용하기
+    retrieval_chain = RetrievalQA.from_chain_type(llm, chain_type="stuff", retriever=db.as_retriever())
+    answer = retrieval_chain.run(query)
 
     return answer
 
