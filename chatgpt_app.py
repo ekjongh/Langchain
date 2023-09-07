@@ -17,120 +17,95 @@
 # > streamlit run chatgpt_app.py
 # ----------------------------------------------------------------------------------------------------------------------
 # 2023.09.08 - 초기모듈 작성 (채팅형식 UI로 변경)
+#
 # ======================================================================================================================
 from chatgpt_service import load_env, answer_from_chatgpt
 import streamlit as st
-from streamlit_chat import message
+import time
+import os
 
 # 환경변수를 로딩한다.
 load_env()
 
-st.header("Chatbot Demo using `Streamlit and GPT-3.5`")
-st.sidebar.title('Chat GPT (RAG)')
+# ----------------------------------------------------------------------------------------------------------------------
+# 챗GPT API를 호출하는 함수
+# ----------------------------------------------------------------------------------------------------------------------
+def request_chat_api(user_message: str) -> str:
+    resp = answer_from_chatgpt(user_message)
 
-# Storing GPT-3.5 responses for easy retrieval to show on Chatbot UI in Streamlit session
-if 'generated' not in st.session_state:
-    st.session_state['generated'] = []
-
-# Storing user responses for easy retrieval to show on Chatbot UI in Streamlit session
-if 'past' not in st.session_state:
-    st.session_state['past'] = []
-
-# Storing total conversation for easy retrieval to show on Chatbot UI in Streamlit session
-if 'total_conversation' not in st.session_state:
-    st.session_state['total_conversation'] = [
-        {'role': 'system',
-         'content': 'Use the following pieces of context to answer the users question.If you don\'t know the answer, just say that you don\'t know, don\'t try to make up an answer'
-         }]
+    return resp
 
 
-def query(user_text):
-    last_message = st.session_state.total_conversation[-1]
-    message = answer_from_chatgpt(last_message["content"])
+# ----------------------------------------------------------------------------------------------------------------------
+# 초기화 함수
+# ----------------------------------------------------------------------------------------------------------------------
+def init_streamlit():
+    st.title("Chatbot Demo using GPT-3.5")
+    st.sidebar.title('Chat GPT')
+    # Add a radio button to the sidebar
+    selected_option = st.sidebar.radio("Select a RAG method:", ["Documents(pdf)", "Web Search", "Etc"])
+    st.write("You selected:", selected_option)
 
-    # Adding bot response to the
-    st.session_state.total_conversation.append({'role': 'system', 'content': message})
-    return message
+    # 사이드바에 파일 업로드 위젯 추가
+    uploaded_file = st.sidebar.file_uploader("Upload a file")
+    if uploaded_file is not None:
+        file_name = os.path.basename(uploaded_file.name)
 
+        destination_dir = './pdf'
+        destination_path = os.path.join(destination_dir, file_name)
 
-def get_text():
-    input_text = st.text_input("You: ", "Hello, How are you?", key="input")
-    return input_text
+        # 선택된 파일을 지정된 디렉토리에 저장한다.
+        with open(destination_path, 'wb') as f:
+            f.write(uploaded_file.read())
 
-
-user_input = get_text()
-
-if user_input:
-    output = query(st.session_state.total_conversation.append({'role': 'user', 'content': user_input}))
-
-    st.session_state.past.append(user_input)
-    st.session_state.generated.append(output)
-
-if st.session_state['generated']:
-
-    for i in range(len(st.session_state['generated']) - 1, -1, -1):
-        message(st.session_state["generated"][i], key=str(i))
-        message(st.session_state['past'][i], is_user=True, key=str(i) + '_user')
+        st.write(f"File '{file_name}' uploaded and saved to './pdf' directory.")
 
 
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-# # [ 삭제예정 ]
-# # ======================================================================================================================
-# # Streamlit + LangChain + ChatGPT
-# # 출처: https://github.com/jaysooo/chatgpt_streamlit_app
-# # ----------------------------------------------------------------------------------------------------------------------
-# # 2023.09.07 - 초기모듈 작성
-# # ======================================================================================================================
-# from chatgpt_service import load_env, answer_from_chatgpt
-# from chatgpt_logger import logger
-# import streamlit as st
-#
-# # ----------------------------------------------------------------------------------------------------------------------
-# # 입력된 채팅을 GPT에 전달하고, 응답을 반환한다.
-# # ----------------------------------------------------------------------------------------------------------------------
-# def send_callback():
-#     query = st.session_state['query']
-#     answer = answer_from_chatgpt(query)
-#     st.session_state['answer'] = answer
-#
-#
-# # ----------------------------------------------------------------------------------------------------------------------
-# # 화면을 초기화한다.
-# # ----------------------------------------------------------------------------------------------------------------------
-# def clear_callback():
-#      st.session_state.clear()
-#
-#
-# # ----------------------------------------------------------------------------------------------------------------------
-# # 사용자 채팅화면을 로딩한다.
-# # ----------------------------------------------------------------------------------------------------------------------
-# def load_streamlit():
-#     #st.sidebar.text_input ='test'
-#     title = st.title = '## Chat GPT Simple Application .. :robot_face:'
-#     st.sidebar.title('Chat GPT (RAG)')
-#
-#     st.write(title)
-#     st.text_input('prompt:keyboard:', key='query')
-#
-#     col1,col2,col3 = st.columns([1,1,1])
-#     with col1:
-#         st.button("send",on_click=send_callback)
-#     with col3:
-#         st.button("clear",on_click=clear_callback)
-#
-#     st.text_area('response',key='answer',height=500)
-#
-#
-# # ----------------------------------------------------------------------------------------------------------------------
-# # 메인 함수
-# # ----------------------------------------------------------------------------------------------------------------------
-# def main():
-#     logger.info("main application start..")
-#     load_env()
-#     load_streamlit()
-#     #answer_from_chatgpt("지금 시간은?")
-#
-# if __name__=='__main__':
-#     main()
+    # Display chat messages from history on app rerun
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+# 메인 함수
+# ----------------------------------------------------------------------------------------------------------------------
+def chat_main():
+    if message := st.chat_input(""):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": message})
+        # Display user message in chat message container
+        with st.chat_message("user"):
+            st.markdown(message)
+
+        # Display assistant response in chat message container
+        assistant_response = request_chat_api(message)
+
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            full_response = ""
+            for lines in assistant_response.split("\n"):
+                for chunk in lines.split():
+                    full_response += chunk + " "
+                    time.sleep(0.05)
+                    # Add a blinking cursor to simulate typing
+                    message_placeholder.markdown(full_response)
+                full_response += "\n"
+            message_placeholder.markdown(full_response)
+
+        # Add assistant response to chat history
+        st.session_state.messages.append(
+            {"role": "assistant", "content": full_response}
+        )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# 초기화 및 에인함수 호출
+# ----------------------------------------------------------------------------------------------------------------------
+if __name__ == "__main__":
+    init_streamlit()
+    chat_main()
 
