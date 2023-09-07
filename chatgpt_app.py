@@ -1,5 +1,5 @@
 # ======================================================================================================================
-# Streamlit + LangChain + ChatGPT
+# Streamlit + LangChain + ChatGPT + Chroma DB
 # 출처: https://pythonwarriors.com/build-chatbot-using-gpt-4-and-streamlit-in-python/
 # langchain structure (2023.09.08)
 # > langchain
@@ -12,6 +12,9 @@
 #   ├- chatgpt_service.py : 챗팅(RAG) 서비스를 제공하는 모듈
 #   ├- Langchain_XXXX-X.ipynb : 작성된 모듈을 테스트하는 Jupyter Notebook
 #   ├- crud : API 서비스를 위한 모듈 ( 비즈니스 모듈 - 대부분의 작업 대상임)
+#
+# [ 실행 명령 ]
+# > streamlit run chatgpt_app.py
 # ----------------------------------------------------------------------------------------------------------------------
 # 2023.09.08 - 초기모듈 작성 (채팅형식 UI로 변경)
 # ======================================================================================================================
