@@ -25,7 +25,7 @@
 # 3) 가장 접합한 답변 선택하기
 # [ 추가해야 할 기능들 ]
 # [X] 파일 업로드 기능
-# [ ] 업로드된 파일에 대해 인베딩벡터로 변환하고, Chroma DB에 추가하는 기능
+# [X] 업로드된 파일에 대해 인베딩벡터로 변환하고, Chroma DB를 다시 생성하는 기능 <- 추가된 파일만 처리하도록 변경 필요
 # [ ] ????
 # ----------------------------------------------------------------------------------------------------------------------
 # 2023.09.07 - 초기모듈 작성
@@ -37,6 +37,7 @@ from dotenv import load_dotenv
 from chatgpt_logger import logger
 import openai
 import os
+import shutil
 
 # ----------------------------------------------------------------------------------------------------------------------
 # 환경 변수들을 딕셔너리로 묶어서 반환한다.
@@ -126,12 +127,18 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 # from langchain.embeddings import SentenceTransformerEmbeddings
 from langchain.embeddings import HuggingFaceEmbeddings
+
 def doc_to_chroma(directory):
     # 해당 디렉토리의 모든 pdf 파일을 읽어서, 문서를 로딩한다.
-    # directory = './pdf'
+    directory = './pdf'
     loader = DirectoryLoader(directory)
     documents = loader.load()
     # len(documents)
+
+    # Chroma DB를 해당 디렉토리에 저장하기 전에 이전 데이터를 삭제한다.
+    persist_directory = "./chroma_db"
+    if os.path.exists(persist_directory):
+        shutil.rmtree(persist_directory)
 
     # 문서를 적당한 크기로 쪼개서, 문서를 분할한다.
     chunk_size = 1000
@@ -140,13 +147,10 @@ def doc_to_chroma(directory):
     docs = text_splitter.split_documents(documents)
     # print(len(docs))
 
-    # 문서를 벡터로 변환하고, Chroma DB 객체를 생성한다.
-    # embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-    embeddings = HuggingFaceEmbeddings()
-    try:
-        db = Chroma.from_documents(docs, embeddings)
-    except:
-        db = Chroma.from_documents(docs, embeddings)
+    # # 문서를 벡터로 변환하고, Chroma DB 객체를 생성한다.
+    # # embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    # embeddings = HuggingFaceEmbeddings()
+    # db = Chroma.from_documents(docs, embeddings)
 
     # Chroma DB를 해당 디렉토리에 저장한다.
     persist_directory = "chroma_db"
@@ -154,3 +158,9 @@ def doc_to_chroma(directory):
         documents=docs, embedding=embeddings, persist_directory=persist_directory
     )
     vectordb.persist()
+
+    # Chroma DB를 다시 로딩한다.
+    global db
+    db = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
+
+

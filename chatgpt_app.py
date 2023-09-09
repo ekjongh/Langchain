@@ -23,11 +23,11 @@
 # 2023.09.09 - 가상환경 파이썬 버전 업그레이드(기존 3.9 -> 3.10)
 #            - 사용자 챗GPT UI 변경 (기존소스 막짠 것 같아서)
 # ======================================================================================================================
-from chatgpt_service import load_env, answer_from_chatgpt
+from chatgpt_service import load_env, answer_from_chatgpt, doc_to_chroma
 from dotenv import load_dotenv, find_dotenv
 from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
 import streamlit as st
-
+from pathlib import Path
 
 # 환경변수를 로딩한다.
 load_env()
@@ -81,7 +81,26 @@ def main():
     model_name, temperature = select_model()
     init_messages()
 
-    # 질문이 입력되었는지 확인한ㄴ다.
+    # 사이드바에 파일 업로드 버튼을 생성한다.
+    uploaded_files = st.sidebar.file_uploader(
+        "Upload PDF Files",
+        accept_multiple_files=True,
+        type=["pdf"]
+    )
+
+    # 업로드한 파일들을 ./pdf 디렉토리로 저장한다.
+    if uploaded_files:
+        pdf_directory = Path("./pdf")
+        pdf_directory.mkdir(parents=True, exist_ok=True)
+
+        for file in uploaded_files:
+            file_path = pdf_directory / file.name
+            with open(file_path, "wb") as f:
+                f.write(file.read())
+
+        doc_to_chroma(pdf_directory)
+
+    # 질문이 입력되었는지 확인한다.
     if user_input := st.chat_input("Input your question!"):
         st.session_state.messages.append(HumanMessage(content=user_input))
         with st.spinner("ChatGPT is typing ..."):
