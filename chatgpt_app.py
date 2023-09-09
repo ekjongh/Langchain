@@ -1,6 +1,6 @@
 # ======================================================================================================================
 # Streamlit + LangChain + ChatGPT + Chroma DB
-# 출처: https://pythonwarriors.com/build-chatbot-using-gpt-4-and-streamlit-in-python/
+# 출처: https://medium.com/@daydreamersjp/implementing-local-chatgpt-using-streamlit-3228bfab8ae7
 # langchain structure (2023.09.08)
 # > langchain
 #   ├- chroma_db : 인베딩벡터를 저장하는 디렉토리
@@ -21,94 +21,89 @@
 # ----------------------------------------------------------------------------------------------------------------------
 # 2023.09.08 - 초기모듈 작성 (채팅형식 UI로 변경)
 # 2023.09.09 - 가상환경 파이썬 버전 업그레이드(기존 3.9 -> 3.10)
+#            - 사용자 챗GPT UI 변경 (기존소스 막짠 것 같아서)
 # ======================================================================================================================
 from chatgpt_service import load_env, answer_from_chatgpt
+from dotenv import load_dotenv, find_dotenv
+from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
 import streamlit as st
-import time
-import os
+
 
 # 환경변수를 로딩한다.
 load_env()
 
 # ----------------------------------------------------------------------------------------------------------------------
+# 메인 화면을 초기화 한다.
+# ----------------------------------------------------------------------------------------------------------------------
+def init_page():
+    st.set_page_config(
+        page_title="Chatbot Demo"
+    )
+    st.header("Chatbot Demo using GPT-3.5")
+    st.sidebar.title("Options")
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# 메시지를 초기화 한다.
+# ----------------------------------------------------------------------------------------------------------------------
+def init_messages():
+    clear_button = st.sidebar.button("Clear Conversation", key="clear")
+    if clear_button or "messages" not in st.session_state:
+        st.session_state.messages = [
+            SystemMessage(
+                content="You are a helpful AI assistant. Respond your answer in mardkown format.")
+        ]
+
+def select_model():
+    # 환경변수 값들을 읽어와서 보여줄 수 있었으면 좋겠음
+    model_name = st.sidebar.radio("Choose LLM:",
+                                  ("gpt-3.5-turbo", "gpt-4"))
+    temperature = st.sidebar.slider("Temperature:", min_value=0.0,
+                                    max_value=1.0, value=0.5, step=0.01)
+    return model_name, temperature
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 # 챗GPT API를 호출하는 함수
 # ----------------------------------------------------------------------------------------------------------------------
 def request_chat_api(user_message: str) -> str:
-    resp = answer_from_chatgpt(user_message)
+    answer = answer_from_chatgpt(user_message)
 
-    return resp
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# 초기화 함수
-# ----------------------------------------------------------------------------------------------------------------------
-def init_streamlit():
-    st.title("Chatbot Demo using GPT-3.5")
-    st.sidebar.title('Chat GPT')
-    # Add a radio button to the sidebar
-    selected_option = st.sidebar.radio("Select a RAG method:", ["Documents(pdf)", "Web Search", "Etc"])
-    st.write("You selected:", selected_option)
-
-    # # 사이드바에 파일 업로드 위젯 추가
-    # uploaded_file = st.sidebar.file_uploader("Upload a file")
-    # if uploaded_file is not None:
-    #     file_name = os.path.basename(uploaded_file.name)
-    #
-    #     destination_dir = './pdf'
-    #     destination_path = os.path.join(destination_dir, file_name)
-    #
-    #     # 선택된 파일을 지정된 디렉토리에 저장한다.
-    #     with open(destination_path, 'wb') as f:
-    #         f.write(uploaded_file.read())
-    #
-    #     st.write(f"File '{file_name}' uploaded and saved to './pdf' directory.")
-
-
-    # Initialize chat history
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    # Display chat messages from history on app rerun
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
+    return answer
 
 # ----------------------------------------------------------------------------------------------------------------------
 # 메인 함수
 # ----------------------------------------------------------------------------------------------------------------------
-def chat_main():
-    if message := st.chat_input(""):
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": message})
-        # Display user message in chat message container
-        with st.chat_message("user"):
-            st.markdown(message)
+def main():
+    # _ = load_dotenv(find_dotenv())
 
-        # Display assistant response in chat message container
-        assistant_response = request_chat_api(message)
+    init_page()
+    model_name, temperature = select_model()
+    init_messages()
 
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-            for lines in assistant_response.split("\n"):
-                for chunk in lines.split():
-                    full_response += chunk + " "
-                    time.sleep(0.05)
-                    # Add a blinking cursor to simulate typing
-                    message_placeholder.markdown(full_response)
-                full_response += "\n"
-            message_placeholder.markdown(full_response)
+    # 질문이 입력되었는지 확인한ㄴ다.
+    if user_input := st.chat_input("Input your question!"):
+        st.session_state.messages.append(HumanMessage(content=user_input))
+        with st.spinner("ChatGPT is typing ..."):
+            answer = request_chat_api(user_input)
+        st.session_state.messages.append(AIMessage(content=answer))
 
-        # Add assistant response to chat history
-        st.session_state.messages.append(
-            {"role": "assistant", "content": full_response}
-        )
+    # 기존 대화내용을 보여준다.
+    messages = st.session_state.get("messages", [])
+    for message in messages:
+        if isinstance(message, AIMessage):
+            with st.chat_message("assistant"):
+                st.markdown(message.content)
+        elif isinstance(message, HumanMessage):
+            with st.chat_message("user"):
+                st.markdown(message.content)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
-# 초기화 및 에인함수 호출
+# 메인함수 호출
 # ----------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    init_streamlit()
-    chat_main()
+    main()
+
+
 
