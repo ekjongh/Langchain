@@ -98,7 +98,7 @@ except:
 # 챗봇 서비스 API
 # ----------------------------------------------------------------------------------------------------------------------
 from langchain.chat_models import ChatOpenAI
-# from langchain.chains.question_answering import load_qa_chain
+from langchain.chains.question_answering import load_qa_chain
 from langchain.chains import RetrievalQA
 def answer_from_chatgpt(query):
     model_name = "gpt-3.5-turbo"
@@ -107,6 +107,7 @@ def answer_from_chatgpt(query):
     # chain = load_qa_chain(llm, chain_type="stuff", verbose=True)
     # matching_docs = db.similarity_search(query)
     # answer = chain.run(input_documents=matching_docs, question=query)
+
 
     # RetrieverQA Chain 사용하기
     retrieval_chain = RetrievalQA.from_chain_type(llm, chain_type="stuff", retriever=db.as_retriever())

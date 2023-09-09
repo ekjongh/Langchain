@@ -10,7 +10,7 @@
 #   ├- chatgpt_app.py : 챗팅형식의 UI를 제공하는 모듈
 #   ├- chatgpt_logger.py : 로그를 기록하는 모듈
 #   ├- chatgpt_service.py : 챗팅(RAG) 서비스를 제공하는 모듈
-#   ├- Langchain_XXXX-X.ipynb : 작성된 모듈을 테스트하는 Jupyter Notebook
+#   ├- 문서들을 임베팅벡터로 변환_XXXX-X.ipynb : 작성된 모듈을 테스트하는 Jupyter Notebook
 #   ├- crud : API 서비스를 위한 모듈 ( 비즈니스 모듈 - 대부분의 작업 대상임)
 #
 # [ 실행 명령 ]
@@ -46,19 +46,19 @@ def init_streamlit():
     selected_option = st.sidebar.radio("Select a RAG method:", ["Documents(pdf)", "Web Search", "Etc"])
     st.write("You selected:", selected_option)
 
-    # 사이드바에 파일 업로드 위젯 추가
-    uploaded_file = st.sidebar.file_uploader("Upload a file")
-    if uploaded_file is not None:
-        file_name = os.path.basename(uploaded_file.name)
-
-        destination_dir = './pdf'
-        destination_path = os.path.join(destination_dir, file_name)
-
-        # 선택된 파일을 지정된 디렉토리에 저장한다.
-        with open(destination_path, 'wb') as f:
-            f.write(uploaded_file.read())
-
-        st.write(f"File '{file_name}' uploaded and saved to './pdf' directory.")
+    # # 사이드바에 파일 업로드 위젯 추가
+    # uploaded_file = st.sidebar.file_uploader("Upload a file")
+    # if uploaded_file is not None:
+    #     file_name = os.path.basename(uploaded_file.name)
+    #
+    #     destination_dir = './pdf'
+    #     destination_path = os.path.join(destination_dir, file_name)
+    #
+    #     # 선택된 파일을 지정된 디렉토리에 저장한다.
+    #     with open(destination_path, 'wb') as f:
+    #         f.write(uploaded_file.read())
+    #
+    #     st.write(f"File '{file_name}' uploaded and saved to './pdf' directory.")
 
 
     # Initialize chat history
