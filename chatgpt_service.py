@@ -88,10 +88,9 @@ persist_directory = "./chroma_db"
 #            - 이유는 아직 모르겠고, Chroma DB가 사용하는 의존성 모듈들의 버전이 맞지 않는 것 같음
 # InvalidInputException: Invalid Input Error: Required module 'pandas.core.arrays.arrow.dtype' failed to import,
 # due to the following Python exception: ModuleNotFoundError: No module named 'pandas.core.arrays.arrow.dtype'
-try:
-    db = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
-except:
-    db = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
+# (조치내용)
+# 2023.09.09 - 가상화환경을 기존 Python 3.9 -> 3.10로 업그레이드 시 해결됨
+db = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
