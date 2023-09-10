@@ -24,7 +24,6 @@
 #            - 사용자 챗GPT UI 변경 (기존소스 막짠 것 같아서)
 # ======================================================================================================================
 from chatgpt_service import load_env, answer_from_chatgpt, doc_to_chroma
-from dotenv import load_dotenv, find_dotenv
 from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
 import streamlit as st
 from pathlib import Path
@@ -66,8 +65,8 @@ def select_model():
 # ----------------------------------------------------------------------------------------------------------------------
 # 챗GPT API를 호출하는 함수
 # ----------------------------------------------------------------------------------------------------------------------
-def request_chat_api(user_message: str) -> str:
-    answer = answer_from_chatgpt(user_message)
+def request_chat_api(user_message: str, model_name:str, temperature:float) -> str:
+    answer = answer_from_chatgpt(user_message, model_name, temperature)
 
     return answer
 
@@ -90,21 +89,22 @@ def main():
 
     # 업로드한 파일들을 ./pdf 디렉토리로 저장한다.
     if uploaded_files:
-        pdf_directory = Path("./pdf")
-        pdf_directory.mkdir(parents=True, exist_ok=True)
+        with st.spinner("Converting to Embedding Vectors......"):
+            pdf_directory = Path("./pdf")
+            pdf_directory.mkdir(parents=True, exist_ok=True)
 
-        for file in uploaded_files:
-            file_path = pdf_directory / file.name
-            with open(file_path, "wb") as f:
-                f.write(file.read())
+            for file in uploaded_files:
+                file_path = pdf_directory / file.name
+                with open(file_path, "wb") as f:
+                    f.write(file.read())
 
-        doc_to_chroma(pdf_directory)
+            doc_to_chroma(pdf_directory)
 
     # 질문이 입력되었는지 확인한다.
     if user_input := st.chat_input("Input your question!"):
         st.session_state.messages.append(HumanMessage(content=user_input))
         with st.spinner("ChatGPT is typing ..."):
-            answer = request_chat_api(user_input)
+            answer = request_chat_api(user_input, model_name, temperature)
         st.session_state.messages.append(AIMessage(content=answer))
 
     # 기존 대화내용을 보여준다.

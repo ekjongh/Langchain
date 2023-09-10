@@ -26,12 +26,14 @@
 # [ 추가해야 할 기능들 ]
 # [X] 파일 업로드 기능
 # [X] 업로드된 파일에 대해 인베딩벡터로 변환하고, Chroma DB를 다시 생성하는 기능 <- 추가된 파일만 처리하도록 변경 필요
-# [ ] ????
+# [X] 화면에서 GPT 모델, 온도, 토큰수를 선택할 수 있도록 기능 추가
+# [ ] 추가된 파일만 임베팅벡터 처리하도록 변경
 # ----------------------------------------------------------------------------------------------------------------------
 # 2023.09.07 - 초기모듈 작성
 #            - 인베딩벡터 정보를 파일로 저장하고, 유사도 검색을 FAISS를 사용하여 처리하는 방식 사용
 # 2023.09.08 - Chroma DB 생성 및 로딩 함수로 변경
 #            - 서비스 흐름도 작성
+# 2023.09.10 - GPT 모델, 온도를 선택하여 챗팅할 수 있도록 기능 추가
 # ======================================================================================================================
 from dotenv import load_dotenv
 from chatgpt_logger import logger
@@ -100,16 +102,22 @@ db = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
 from langchain.chat_models import ChatOpenAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains import RetrievalQA
-def answer_from_chatgpt(query):
-    model_name = "gpt-3.5-turbo"
-    temperature = 0.3
-    llm = ChatOpenAI(model_name=model_name)
+def answer_from_chatgpt(query, model_name=, temperature):
+    # model_name = "gpt-3.5-turbo"
+    # temperature = 0.3
+    llm = ChatOpenAI(model_name=model_name, temperature=temperature)
     # chain = load_qa_chain(llm, chain_type="stuff", verbose=True)
     # matching_docs = db.similarity_search(query)
     # answer = chain.run(input_documents=matching_docs, question=query)
 
 
     # RetrieverQA Chain 사용하기
+    # 체인타입(chain_type)
+    # - stuff: 문서 검색 결과를 하나의 텍스트로 합치고, 그 텍스트를 답변 생성에 사용, 가장 간단하고 빠른 체인
+    # - map_reduce: 문서 검색 결과를 각각 답변 생성에 사용하고, 그 결과들을 점수화하고,
+    #               가장 높은 점수를 가진 답변을 선택하는 체인, 가장 정확하고 다양한 답변을 생성할 수 있는 체인
+    # map_reduce_with_context: map_reduce와 비슷하지만, 문서 검색 결과를 답변 생성에 사용할 때,
+    #               문서의 제목과 URL을 함께 넘겨주는 체인, 문서의 출처와 관련성을 고려할 수 있는 체인
     retrieval_chain = RetrievalQA.from_chain_type(llm, chain_type="stuff", retriever=db.as_retriever())
     answer = retrieval_chain.run(query)
 
