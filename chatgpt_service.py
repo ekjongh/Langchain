@@ -104,7 +104,7 @@ db = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
 from langchain.chat_models import ChatOpenAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chains import RetrievalQA
-def answer_from_chatgpt(query, model_name=, temperature):
+def answer_from_chatgpt(query, model_name, temperature):
     # model_name = "gpt-3.5-turbo"
     # temperature = 0.3
     llm = ChatOpenAI(model_name=model_name, temperature=temperature)
@@ -118,7 +118,7 @@ def answer_from_chatgpt(query, model_name=, temperature):
     # - stuff: 문서 검색 결과를 하나의 텍스트로 합치고, 그 텍스트를 답변 생성에 사용, 가장 간단하고 빠른 체인
     # - map_reduce: 문서 검색 결과를 각각 답변 생성에 사용하고, 그 결과들을 점수화하고,
     #               가장 높은 점수를 가진 답변을 선택하는 체인, 가장 정확하고 다양한 답변을 생성할 수 있는 체인
-    # map_reduce_with_context: map_reduce와 비슷하지만, 문서 검색 결과를 답변 생성에 사용할 때,
+    # - map_reduce_with_context: map_reduce와 비슷하지만, 문서 검색 결과를 답변 생성에 사용할 때,
     #               문서의 제목과 URL을 함께 넘겨주는 체인, 문서의 출처와 관련성을 고려할 수 있는 체인
     retrieval_chain = RetrievalQA.from_chain_type(llm, chain_type="stuff", retriever=db.as_retriever())
     answer = retrieval_chain.run(query)
